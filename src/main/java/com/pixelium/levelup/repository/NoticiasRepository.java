@@ -1,4 +1,4 @@
 package com.pixelium.levelup.repository;
 
-public interface ProductoRepository {
+public interface NoticiasRepository {
 }
