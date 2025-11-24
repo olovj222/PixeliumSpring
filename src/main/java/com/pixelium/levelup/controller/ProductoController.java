@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("api/v1/products")
-
+@RequestMapping("api/v1/productos")
+@CrossOrigin(origins = "*")
 public class ProductoController {
     @Autowired
     private ProductoService productoService;
