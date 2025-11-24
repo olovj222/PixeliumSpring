@@ -18,7 +18,7 @@ public class UsuarioController {
     @GetMapping
     public List<Usuario> getAll() {return usuarioService.findAll(); }
 
-    @GetMapping("id")
+    @GetMapping("{id}")
     public Optional<Usuario> getById(@PathVariable int id){ return usuarioService.findById(id);}
 
     @PostMapping
@@ -27,6 +27,6 @@ public class UsuarioController {
         return newUsuario;
     }
 
-    @DeleteMapping({"id"})
+    @DeleteMapping("{id}")
     public void delete(@PathVariable int id) {usuarioService.deleteById(id);}
 }
