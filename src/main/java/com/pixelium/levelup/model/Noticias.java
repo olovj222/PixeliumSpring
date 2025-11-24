@@ -17,6 +17,8 @@ public class Noticias {
     @Column(length = 100)
     private String titulo;
 
-    @Column(length = 500) // Un poco más largo para el contenido
+    @Column(length = 1500)
     private String detalle;
+
+    private String imagen; // Guardará "foto1.jpg"
 }
