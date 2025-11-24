@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -14,23 +13,18 @@ public class Producto {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    @Column(length = 30)
+
     private String title;
-    @Column(length = 30)
+
+    @Column(length = 1000) // Aumentamos el tamaño para descripciones largas
     private String description;
-    @Column(length = 30)
+
     private String category;
-    @Column(length = 30)
     private int price;
-    @Column(name = "image_src")
+
+    // Imágenes (Usamos camelCase en Java)
     private String imageSrc;
-
-    @Column(name = "image_src_2")
     private String imageSrc2;
-
-    @Column(name = "image_src_3")
     private String imageSrc3;
-
-    @Column(name = "image_src_4")
     private String imageSrc4;
 }
