@@ -1,4 +1,4 @@
 package com.pixelium.levelup.repository;
 
-public class UsuarioRepository {
+public interface UsuarioRepository {
 }
