@@ -12,9 +12,28 @@ import lombok.NoArgsConstructor;
 public class Usuario {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
-    @Column(length = 30)
+    private Integer id;
+
+    // Campos básicos
+    @Column(length = 100)
     private String nombre;
-    @Column(length = 30)
-    private String apellido;
+
+    @Column(length = 20, unique = true)
+    private String rut; // Nuevo
+
+    @Column(length = 20)
+    private String telefono; // Nuevo
+
+    private String fechaNacimiento; // Nuevo (Lo guardamos como String "YYYY-MM-DD" para simplificar)
+
+    @Column(unique = true, length = 100)
+    private String correo; // Usamos 'correo' para coincidir con tu frontend
+
+    private String password;
+
+    private String comuna; // Nuevo
+
+    private String correoReferido; // Nuevo (Tu 'correo3')
+
+    private String role; // "ADMIN" o "USER"
 }
