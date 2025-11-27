@@ -20,8 +20,9 @@ public class ProductoService {
     @Autowired
     private ProductoRepository productoRepository;
 
-    // Definimos la carpeta donde se guardarán los archivos
     private final Path rootLocation = Paths.get("uploads");
+
+    // ... (Métodos find, delete, save(Producto p) se mantienen) ...
 
     public List<Producto> findAll() {
         return productoRepository.findAll();
@@ -31,31 +32,68 @@ public class ProductoService {
         return productoRepository.findById(id);
     }
 
-    // Método para guardar SIN archivo (útil si editas datos pero no la imagen)
     public Producto save(Producto p) {
         return productoRepository.save(p);
     }
 
-    // --- NUEVO MÉTODO ---
-    // Este es el que usa tu Controller para guardar la imagen física
+    // El método save anterior se puede renombrar o mantener, pero si el Controller usa el nuevo,
+    // este es el método que hay que usar si solo se envía un archivo:
     public Producto save(Producto producto, MultipartFile file) throws IOException {
-        // 1. Verificamos si viene un archivo
+        // Lógica de guardado de un solo archivo (se mantiene)
         if (file != null && !file.isEmpty()) {
-            // 2. Generamos nombre único (UUID + nombre original) para evitar conflictos
-            String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-
-            // 3. Resolvemos la ruta completa
-            Path destinationFile = this.rootLocation.resolve(Paths.get(fileName))
-                    .normalize().toAbsolutePath();
-
-            // 4. Copiamos el archivo a la carpeta 'uploads'
-            Files.copy(file.getInputStream(), destinationFile, StandardCopyOption.REPLACE_EXISTING);
-
-            // 5. Guardamos SOLO el nombre del archivo en la base de datos
+            String fileName = storeFile(file);
             producto.setImageSrc(fileName);
         }
+        return productoRepository.save(producto);
+    }
 
-        // 6. Guardamos el producto en la BD
+    // --- NUEVOS MÉTODOS DE SOPORTE ---
+
+    // Método helper para guardar un archivo y retornar el nombre único
+    private String storeFile(MultipartFile file) throws IOException {
+        String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+        Path destinationFile = this.rootLocation.resolve(Paths.get(fileName))
+                .normalize().toAbsolutePath();
+
+        // Aseguramos que la carpeta exista
+        if (!Files.exists(this.rootLocation)) {
+            Files.createDirectories(this.rootLocation);
+        }
+
+        Files.copy(file.getInputStream(), destinationFile, StandardCopyOption.REPLACE_EXISTING);
+        return fileName;
+    }
+
+    // --- NUEVO MÉTODO PRINCIPAL PARA MÚLTIPLES ARCHIVOS ---
+    public Producto saveWithMultipleFiles(Producto producto, MultipartFile[] files) throws IOException {
+
+        // El array files tiene 4 posiciones: [Principal, Detalle2, Detalle3, Detalle4]
+        for (int i = 0; i < files.length; i++) {
+            MultipartFile file = files[i];
+
+            // Verificamos si el archivo existe (solo el principal es obligatorio, el resto pueden ser null)
+            if (file != null && !file.isEmpty()) {
+                String fileName = storeFile(file); // Guardamos el archivo
+
+                // Asignamos el nombre de archivo a la propiedad correcta del Producto
+                switch (i) {
+                    case 0: // Imagen Principal
+                        producto.setImageSrc(fileName);
+                        break;
+                    case 1: // Imagen 2
+                        producto.setImageSrc2(fileName);
+                        break;
+                    case 2: // Imagen 3
+                        producto.setImageSrc3(fileName);
+                        break;
+                    case 3: // Imagen 4
+                        producto.setImageSrc4(fileName);
+                        break;
+                }
+            }
+        }
+
+        // Guardamos el producto en la BD con todos los nombres de archivo asignados
         return productoRepository.save(producto);
     }
 

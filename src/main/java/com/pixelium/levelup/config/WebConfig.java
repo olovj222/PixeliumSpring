@@ -9,8 +9,14 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Mapea la URL "/images/**" a la carpeta física "uploads"
+
+        // 1. Mapea la URL "/images/**" a la carpeta física "uploads/" (Imágenes de Productos)
         registry.addResourceHandler("/images/**")
                 .addResourceLocations("file:uploads/");
+
+        // 2. Mapea la URL "/avatars/**" a la carpeta física "avatars/" (Fotos de Perfil)
+        // La URL base del frontend para avatares es "http://localhost:8080/avatars/"
+        registry.addResourceHandler("/avatars/**")
+                .addResourceLocations("file:avatars/");
     }
 }

@@ -12,11 +12,13 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("api/v1/productos")
-@CrossOrigin(origins = "*") // Importante para permitir peticiones desde React
+@CrossOrigin(origins = "*")
 public class ProductoController {
 
     @Autowired
     private ProductoService productoService;
+
+    // ... (Métodos GET, DELETE se mantienen igual) ...
 
     @GetMapping
     public List<Producto> getAll() {
@@ -28,27 +30,33 @@ public class ProductoController {
         return productoService.findById(id);
     }
 
-    // --- AQUÍ ESTÁ LA SOLUCIÓN ---
-    // NO uses @RequestBody Producto producto.
-    // Debes desglosar los campos uno a uno para aceptar 'multipart/form-data'
+    // --- MÉTODO SAVE CORREGIDO PARA MULTIPLES ARCHIVOS ---
     @PostMapping
     public Producto save(
             @RequestParam("title") String title,
             @RequestParam("description") String description,
             @RequestParam("category") String category,
             @RequestParam("price") int price,
-            @RequestParam(value = "file", required = false) MultipartFile file
+            // Imagen Principal (El nombre del campo debe coincidir con el 'formData.append' del frontend)
+            @RequestParam("filePrincipal") MultipartFile filePrincipal,
+            // Imágenes de Detalle (Opcionales - Usamos required = false)
+            @RequestParam(value = "fileDetalle2", required = false) MultipartFile fileDetalle2,
+            @RequestParam(value = "fileDetalle3", required = false) MultipartFile fileDetalle3,
+            @RequestParam(value = "fileDetalle4", required = false) MultipartFile fileDetalle4
     ) throws IOException {
 
-        // 1. Creamos el objeto manualmente con los datos que llegan
+        // 1. Creamos el objeto Producto
         Producto producto = new Producto();
         producto.setTitle(title);
         producto.setDescription(description);
         producto.setCategory(category);
         producto.setPrice(price);
 
-        // 2. Llamamos al servicio que sabe guardar la imagen
-        return productoService.save(producto, file);
+        // 2. Creamos un array de archivos para pasarlos al servicio
+        MultipartFile[] files = {filePrincipal, fileDetalle2, fileDetalle3, fileDetalle4};
+
+        // 3. Llamamos al servicio que guardará el producto y todos los archivos
+        return productoService.saveWithMultipleFiles(producto, files);
     }
 
     @DeleteMapping("/{id}")
