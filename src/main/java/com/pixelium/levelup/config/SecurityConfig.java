@@ -52,6 +52,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/admin/**").hasAuthority("ADMIN")
                         // Protegemos el resto de las rutas de usuarios (incluyendo PUT)
                         .requestMatchers("/api/v1/usuarios/**").authenticated()
+                        .requestMatchers("/doc/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/webjars/**","/configuration/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -101,4 +103,5 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
 }

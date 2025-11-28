@@ -2,6 +2,10 @@ package com.pixelium.levelup.controller;
 
 import com.pixelium.levelup.model.Usuario;
 import com.pixelium.levelup.service.UsuarioService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +20,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("api/v1/usuarios")
-@CrossOrigin(origins = "*")
+@Tag(name = "Usuarios", description = "Operaciones sobre usuarios")
 public class UsuarioController {
 
     @Autowired
@@ -29,8 +33,13 @@ public class UsuarioController {
     }
 
     @GetMapping
-    public List<Usuario> getAll() {
-        return usuarioService.findAll();
+    @Operation(summary = "Obtener todos los usuarios",description = "Obtiene una lista de todos los usuarios")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operación exitosa"),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+    })
+    public ResponseEntity<List<Usuario>> getAll() {
+        return ResponseEntity.ok(usuarioService.findAll());
     }
 
     @GetMapping("/{id}")
