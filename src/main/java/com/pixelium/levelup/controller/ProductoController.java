@@ -47,7 +47,12 @@ public class ProductoController {
 
     // --- METODO SAVE CORREGIDO PARA MULTIPLES ARCHIVOS ---
     @PostMapping
-    public Producto save(
+    @Operation(summary = "Modificar producto",description = "Modifica un producto por id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operación exitosa"),
+            @ApiResponse(responseCode = "404", description = "Modificacion no exitosa")
+    })
+    public ResponseEntity<Producto> save(
             @RequestParam("title") String title,
             @RequestParam("description") String description,
             @RequestParam("category") String category,
@@ -71,11 +76,17 @@ public class ProductoController {
         MultipartFile[] files = {filePrincipal, fileDetalle2, fileDetalle3, fileDetalle4};
 
         // 3. Llamamos al servicio que guardará el producto y todos los archivos
-        return productoService.saveWithMultipleFiles(producto, files);
+        return ResponseEntity.ok(productoService.saveWithMultipleFiles(producto, files));
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable int id) {
+    @Operation(summary = "Eliminar producto",description = "Elimina un producto por id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operación exitosa"),
+            @ApiResponse(responseCode = "404", description = "Eliminar no exitoso")
+    })
+    public ResponseEntity<Void> delete(@PathVariable int id) {
         productoService.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }

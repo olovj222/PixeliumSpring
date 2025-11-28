@@ -2,6 +2,7 @@ package com.pixelium.levelup.controller;
 
 import com.pixelium.levelup.model.Noticias;
 import com.pixelium.levelup.service.NoticiasService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,6 +13,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("api/v1/noticias")
+@Tag(name = "Noticias", description = "Operaciones sobre noticias")
 @CrossOrigin(origins = "*") // Importante para que React pueda subir archivos
 public class NoticiasController {
 
