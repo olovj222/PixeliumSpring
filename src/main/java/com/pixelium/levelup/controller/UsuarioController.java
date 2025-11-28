@@ -36,18 +36,28 @@ public class UsuarioController {
     @Operation(summary = "Obtener todos los usuarios",description = "Obtiene una lista de todos los usuarios")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Operación exitosa"),
-            @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+            @ApiResponse(responseCode = "404", description = "Usuarios no encontrados")
     })
     public ResponseEntity<List<Usuario>> getAll() {
         return ResponseEntity.ok(usuarioService.findAll());
     }
 
     @GetMapping("/{id}")
-    public Optional<Usuario> getById(@PathVariable int id) {
-        return usuarioService.findById(id);
+    @Operation(summary = "Obtener un usuario",description = "Obtiene un usuario mediante su id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operación exitosa"),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+    })
+    public ResponseEntity<Optional<Usuario>> getById(@PathVariable int id) {
+        return ResponseEntity.ok(usuarioService.findById(id));
     }
 
     @PostMapping("/register")
+    @Operation(summary = "Crea un nuevo usuario",description = "Registra un usuario mediante sus datos")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operación exitosa"),
+            @ApiResponse(responseCode = "404", description = "Registro no exitoso")
+    })
     public ResponseEntity<?> register(@RequestBody Usuario usuario) {
         try {
             Usuario newUsuario = usuarioService.save(usuario);
@@ -58,6 +68,11 @@ public class UsuarioController {
     }
 
     @PostMapping("/login")
+    @Operation(summary = "Inicia sesión con usuario",description = "Inicia sesión de usuario registrado")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operación exitosa"),
+            @ApiResponse(responseCode = "404", description = "Login no exitoso")
+    })
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
             String token = usuarioService.login(loginRequest.correo, loginRequest.password);
@@ -77,6 +92,11 @@ public class UsuarioController {
 
     // --- NUEVO ENDPOINT: ACTUALIZAR PERFIL (PUT) ---
     @PutMapping("/{id}")
+    @Operation(summary = "Actualiza perfil de usuario",description = "Modifica datos de usuario existente")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operación exitosa"),
+            @ApiResponse(responseCode = "404", description = "Modificación no exitosa")
+    })
     public ResponseEntity<?> updateProfile(
             @PathVariable Integer id,
             @RequestParam("nombre") String nombre,
@@ -120,6 +140,11 @@ public class UsuarioController {
     // --- FIN ENDPOINT ACTUALIZAR PERFIL ---
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Elimina usuario",description = "Elimina usuario mediante su id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operación exitosa"),
+            @ApiResponse(responseCode = "404", description = "Eliminado sin exito")
+    })
     public void delete(@PathVariable int id) {
         usuarioService.deleteById(id);
     }

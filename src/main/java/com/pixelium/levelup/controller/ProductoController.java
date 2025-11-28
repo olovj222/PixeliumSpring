@@ -2,7 +2,12 @@ package com.pixelium.levelup.controller;
 
 import com.pixelium.levelup.model.Producto;
 import com.pixelium.levelup.service.ProductoService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -12,7 +17,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("api/v1/productos")
-@CrossOrigin(origins = "*")
+@Tag(name = "Productos", description = "Operaciones sobre productos")
 public class ProductoController {
 
     @Autowired
@@ -21,16 +26,26 @@ public class ProductoController {
     // ... (Métodos GET, DELETE se mantienen igual) ...
 
     @GetMapping
+    @Operation(summary = "Obtener todos los productos",description = "Obtiene una lista de todos los productos")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operación exitosa"),
+            @ApiResponse(responseCode = "404", description = "Productos no encontrados")
+    })
     public List<Producto> getAll() {
         return productoService.findAll();
     }
 
     @GetMapping("/{id}")
-    public Optional<Producto> getById(@PathVariable int id) {
-        return productoService.findById(id);
+    @Operation(summary = "Obtener producto",description = "Obtiene producto por id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operación exitosa"),
+            @ApiResponse(responseCode = "404", description = "Producto no encontrado")
+    })
+    public ResponseEntity<Optional<Producto>> getById(@PathVariable int id) {
+        return ResponseEntity.ok(productoService.findById(id));
     }
 
-    // --- MÉTODO SAVE CORREGIDO PARA MULTIPLES ARCHIVOS ---
+    // --- METODO SAVE CORREGIDO PARA MULTIPLES ARCHIVOS ---
     @PostMapping
     public Producto save(
             @RequestParam("title") String title,
