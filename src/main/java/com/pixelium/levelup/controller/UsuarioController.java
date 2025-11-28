@@ -5,13 +5,14 @@ import com.pixelium.levelup.service.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement; // 🚨 NUEVO IMPORT
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile; // ¡IMPORTANTE! Necesario para manejar archivos
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.List;
@@ -21,6 +22,8 @@ import java.util.Optional;
 @RestController
 @RequestMapping("api/v1/usuarios")
 @Tag(name = "Usuarios", description = "Operaciones sobre usuarios")
+// 🚨 APLICAR SEGURIDAD JWT A NIVEL DE CONTROLADOR (afecta a todos los métodos por defecto)
+@SecurityRequirement(name = "Bearer Authentication")
 public class UsuarioController {
 
     @Autowired
@@ -36,6 +39,7 @@ public class UsuarioController {
     @Operation(summary = "Obtener todos los usuarios",description = "Obtiene una lista de todos los usuarios")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Operación exitosa"),
+            @ApiResponse(responseCode = "403", description = "No autorizado"), // Añadido 403 para rutas protegidas
             @ApiResponse(responseCode = "404", description = "Usuarios no encontrados")
     })
     public ResponseEntity<List<Usuario>> getAll() {
@@ -46,6 +50,7 @@ public class UsuarioController {
     @Operation(summary = "Obtener un usuario",description = "Obtiene un usuario mediante su id")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Operación exitosa"),
+            @ApiResponse(responseCode = "403", description = "No autorizado"),
             @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
     })
     public ResponseEntity<Optional<Usuario>> getById(@PathVariable int id) {
@@ -53,10 +58,11 @@ public class UsuarioController {
     }
 
     @PostMapping("/register")
-    @Operation(summary = "Crea un nuevo usuario",description = "Registra un usuario mediante sus datos")
+    @Operation(summary = "Crea un nuevo usuario",description = "Registra un usuario mediante sus datos",
+            security = @SecurityRequirement(name = "")) // 🚨 EXCLUIR SEGURIDAD JWT
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Operación exitosa"),
-            @ApiResponse(responseCode = "404", description = "Registro no exitoso")
+            @ApiResponse(responseCode = "400", description = "Registro no exitoso")
     })
     public ResponseEntity<?> register(@RequestBody Usuario usuario) {
         try {
@@ -68,10 +74,11 @@ public class UsuarioController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Inicia sesión con usuario",description = "Inicia sesión de usuario registrado")
+    @Operation(summary = "Inicia sesión con usuario",description = "Inicia sesión de usuario registrado",
+            security = @SecurityRequirement(name = "")) // 🚨 EXCLUIR SEGURIDAD JWT
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Operación exitosa"),
-            @ApiResponse(responseCode = "404", description = "Login no exitoso")
+            @ApiResponse(responseCode = "401", description = "Credenciales incorrectas")
     })
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
@@ -90,12 +97,13 @@ public class UsuarioController {
         }
     }
 
-    // --- NUEVO ENDPOINT: ACTUALIZAR PERFIL (PUT) ---
+    // --- ENDPOINT: ACTUALIZAR PERFIL (PUT) ---
     @PutMapping("/{id}")
     @Operation(summary = "Actualiza perfil de usuario",description = "Modifica datos de usuario existente")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Operación exitosa"),
-            @ApiResponse(responseCode = "404", description = "Modificación no exitosa")
+            @ApiResponse(responseCode = "403", description = "No autorizado o ID no coincide"),
+            @ApiResponse(responseCode = "400", description = "Modificación no exitosa")
     })
     public ResponseEntity<?> updateProfile(
             @PathVariable Integer id,
@@ -107,7 +115,7 @@ public class UsuarioController {
             @RequestParam(value = "avatar", required = false) MultipartFile avatar
     ) {
         try {
-            // 1️⃣ Obtener usuario autenticado desde el JWT
+            // Lógica de validación de autenticación de Spring Security
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             String correoAuth = auth.getName();
 
@@ -119,7 +127,7 @@ public class UsuarioController {
                 return ResponseEntity.status(403).body("No puedes editar el perfil de otro usuario");
             }
 
-            // 3️⃣ Crear objeto User con los cambios
+            // Crear objeto User con los cambios
             Usuario updatedUser = new Usuario();
             updatedUser.setId(id);
             updatedUser.setNombre(nombre);
@@ -128,7 +136,7 @@ public class UsuarioController {
             updatedUser.setFechaNacimiento(fechaNacimiento);
             updatedUser.setComuna(comuna);
 
-            // 4️⃣ Guardar cambios
+            // Guardar cambios
             Usuario result = usuarioService.updateProfile(updatedUser, avatar);
 
             return ResponseEntity.ok(result);
@@ -143,6 +151,7 @@ public class UsuarioController {
     @Operation(summary = "Elimina usuario",description = "Elimina usuario mediante su id")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Operación exitosa"),
+            @ApiResponse(responseCode = "403", description = "No autorizado"),
             @ApiResponse(responseCode = "404", description = "Eliminado sin exito")
     })
     public void delete(@PathVariable int id) {

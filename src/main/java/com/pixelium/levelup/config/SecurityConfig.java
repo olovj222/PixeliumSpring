@@ -3,6 +3,7 @@ package com.pixelium.levelup.config;
 import com.pixelium.levelup.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod; // 🚨 Importar para especificar métodos HTTP
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -27,7 +28,6 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
-    // Eliminamos 'userDetailsService' de aquí
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
@@ -37,28 +37,35 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-
-                // 1. CONFIGURACIÓN CORS: Permite peticiones desde el frontend (localhost:5173)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
                 .authorizeHttpRequests(auth -> auth
-                        // Rutas públicas (Login, Register, Productos, Noticias)
+                        // RUTAS PÚBLICAS Y DE SWAGGER
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/webjars/**", "/doc/**").permitAll()
                         .requestMatchers("/api/v1/usuarios/login", "/api/v1/usuarios/register").permitAll()
-                        .requestMatchers("/api/v1/productos/**", "/api/v1/noticias/**").permitAll()
-                        // Rutas estáticas para imágenes y avatares
                         .requestMatchers("/images/**", "/avatars/**").permitAll()
 
-                        // Rutas protegidas
+                        // 🟡 PRODUCTOS: Permitir solo GET públicamente
+                        .requestMatchers(HttpMethod.GET, "/api/v1/productos/**").permitAll()
+                        // 🔴 PRODUCTOS: POST y DELETE REQUIEREN ADMIN
+                        .requestMatchers(HttpMethod.POST, "/api/v1/productos/**").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/productos/**").hasAuthority("ADMIN")
+
+                        // 🟡 NOTICIAS: Permitir solo GET públicamente
+                        .requestMatchers(HttpMethod.GET, "/api/v1/noticias/**").permitAll()
+                        // 🔴 NOTICIAS: POST y DELETE REQUIEREN ADMIN
+                        .requestMatchers(HttpMethod.POST, "/api/v1/noticias/**").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/noticias/**").hasAuthority("ADMIN")
+
+                        // RUTAS PROTEGIDAS GENERALES
                         .requestMatchers("/api/v1/admin/**").hasAuthority("ADMIN")
-                        // Protegemos el resto de las rutas de usuarios (incluyendo PUT)
+                        // 👤 Rutas de Usuarios (requieren cualquier usuario autenticado)
                         .requestMatchers("/api/v1/usuarios/**").authenticated()
-                        .requestMatchers("/doc/**").permitAll()
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/webjars/**","/configuration/**").permitAll()
+
+                        // Cualquier otra ruta REQUIERE autenticación
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // 2. CORRECCIÓN MENOR: authenticationProvider se llama sin argumentos
-                // ya que Spring lo encuentra por tipo de retorno
                 .authenticationProvider(authenticationProvider(null, passwordEncoder()))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -70,32 +77,22 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Permitir el origen de tu frontend (React)
         configuration.setAllowedOrigins(List.of("http://localhost:5173"));
-
-        // Permitir todos los métodos HTTP que usamos, incluyendo PUT y OPTIONS
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-
-        // Permitir headers esenciales (Content-Type para FormData, Authorization para JWT)
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        // Aplicar esta configuración CORS a TODAS las rutas (/**)
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
 
-    // 3. CORRECCIÓN PRINCIPAL: Inyectamos UserDetailsService y PasswordEncoder en el método Bean
+    // 3. CONFIGURACIÓN DEL AUTHENTICATION PROVIDER
     @Bean
     public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
-        // Inicialización con constructor que requiere UserDetailsService (Spring Security 6+)
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
-
-        // El setPasswordEncoder se mantiene
         authProvider.setPasswordEncoder(passwordEncoder);
-
         return authProvider;
     }
 

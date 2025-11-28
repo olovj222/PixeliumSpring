@@ -3,10 +3,15 @@ package com.pixelium.levelup.controller;
 import com.pixelium.levelup.model.Producto;
 import com.pixelium.levelup.service.ProductoService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Encoding;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement; // Import necesario si aplicaras seguridad
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus; // Nuevo import
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,12 +23,12 @@ import java.util.Optional;
 @RestController
 @RequestMapping("api/v1/productos")
 @Tag(name = "Productos", description = "Operaciones sobre productos")
+// 🚨 NOTA: NO aplicamos @SecurityRequirement(name = "Bearer Authentication") aquí
+// porque estas rutas están en permitAll() en SecurityConfig.
 public class ProductoController {
 
     @Autowired
     private ProductoService productoService;
-
-    // ... (Métodos GET, DELETE se mantienen igual) ...
 
     @GetMapping
     @Operation(summary = "Obtener todos los productos",description = "Obtiene una lista de todos los productos")
@@ -31,8 +36,13 @@ public class ProductoController {
             @ApiResponse(responseCode = "200", description = "Operación exitosa"),
             @ApiResponse(responseCode = "404", description = "Productos no encontrados")
     })
-    public List<Producto> getAll() {
-        return productoService.findAll();
+    public ResponseEntity<List<Producto>> getAll() {
+        // Usamos ResponseEntity para controlar el estado 200 OK
+        List<Producto> productos = productoService.findAll();
+        if (productos.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        return ResponseEntity.ok(productos);
     }
 
     @GetMapping("/{id}")
@@ -42,51 +52,72 @@ public class ProductoController {
             @ApiResponse(responseCode = "404", description = "Producto no encontrado")
     })
     public ResponseEntity<Optional<Producto>> getById(@PathVariable int id) {
-        return ResponseEntity.ok(productoService.findById(id));
+        Optional<Producto> producto = productoService.findById(id);
+        if (producto.isEmpty()) {
+            return ResponseEntity.notFound().build(); // Devuelve 404
+        }
+        return ResponseEntity.ok(producto);
     }
 
     // --- METODO SAVE CORREGIDO PARA MULTIPLES ARCHIVOS ---
+    // NOTA: Asumimos que esta acción es de ADMIN, pero la ruta es permitAll()
+    // Si quieres protegerla, debes mover /api/v1/productos a /api/v1/admin/productos
     @PostMapping
-    @Operation(summary = "Modificar producto",description = "Modifica un producto por id")
+    @Operation(
+            summary = "Crear nuevo producto",
+            description = "Crea un nuevo producto con hasta 4 imágenes (Requiere multipart/form-data)",
+            security = @SecurityRequirement(name = "Bearer Authentication")
+            // 🚨 AQUÍ ELIMINAMOS requestBody Y LA PROPIEDAD CONSUMES INCOMPATIBLE
+    )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Operación exitosa"),
-            @ApiResponse(responseCode = "404", description = "Modificacion no exitosa")
+            @ApiResponse(responseCode = "201", description = "Producto creado exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos o error de I/O"),
+            @ApiResponse(responseCode = "403", description = "No autorizado (Requiere ADMIN)")
     })
     public ResponseEntity<Producto> save(
             @RequestParam("title") String title,
             @RequestParam("description") String description,
             @RequestParam("category") String category,
             @RequestParam("price") int price,
-            // Imagen Principal (El nombre del campo debe coincidir con el 'formData.append' del frontend)
-            @RequestParam("filePrincipal") MultipartFile filePrincipal,
-            // Imágenes de Detalle (Opcionales - Usamos required = false)
+            @RequestParam(value = "filePrincipal", required = false) MultipartFile filePrincipal,
             @RequestParam(value = "fileDetalle2", required = false) MultipartFile fileDetalle2,
             @RequestParam(value = "fileDetalle3", required = false) MultipartFile fileDetalle3,
             @RequestParam(value = "fileDetalle4", required = false) MultipartFile fileDetalle4
-    ) throws IOException {
+    ) {
+        try {
+            Producto producto = new Producto();
+            producto.setTitle(title);
+            producto.setDescription(description);
+            producto.setCategory(category);
+            producto.setPrice(price);
 
-        // 1. Creamos el objeto Producto
-        Producto producto = new Producto();
-        producto.setTitle(title);
-        producto.setDescription(description);
-        producto.setCategory(category);
-        producto.setPrice(price);
+            MultipartFile[] files = {filePrincipal, fileDetalle2, fileDetalle3, fileDetalle4};
+            Producto savedProduct = productoService.saveWithMultipleFiles(producto, files);
 
-        // 2. Creamos un array de archivos para pasarlos al servicio
-        MultipartFile[] files = {filePrincipal, fileDetalle2, fileDetalle3, fileDetalle4};
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedProduct);
 
-        // 3. Llamamos al servicio que guardará el producto y todos los archivos
-        return ResponseEntity.ok(productoService.saveWithMultipleFiles(producto, files));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Eliminar producto",description = "Elimina un producto por id")
+    @Operation(summary = "Eliminar producto",description = "Elimina un producto por id", security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Operación exitosa"),
-            @ApiResponse(responseCode = "404", description = "Eliminar no exitoso")
+            @ApiResponse(responseCode = "204", description = "Producto eliminado exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Producto no encontrado")
     })
     public ResponseEntity<Void> delete(@PathVariable int id) {
-        productoService.deleteById(id);
-        return ResponseEntity.noContent().build();
+        // En una implementación robusta, verificaríamos si el producto existe antes de eliminar.
+        try {
+            productoService.deleteById(id);
+            // 204 No Content: Respuesta estándar para DELETE exitoso sin cuerpo de respuesta.
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            // Asumimos que cualquier fallo es porque no se encontró el recurso
+            return ResponseEntity.notFound().build(); // Devuelve 404
+        }
     }
 }
