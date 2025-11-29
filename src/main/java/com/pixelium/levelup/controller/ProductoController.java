@@ -120,4 +120,46 @@ public class ProductoController {
             return ResponseEntity.notFound().build(); // Devuelve 404
         }
     }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Actualizar producto", description = "Actualiza un producto existente por su ID.", security = @SecurityRequirement(name = "Bearer Authentication"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Producto actualizado exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos o error de archivo"),
+            @ApiResponse(responseCode = "404", description = "Producto no encontrado")
+    })
+    public ResponseEntity<Producto> update(
+            @PathVariable int id,
+            @RequestParam("title") String title,
+            @RequestParam("description") String description,
+            @RequestParam("category") String category,
+            @RequestParam("price") int price,
+            @RequestParam(value = "filePrincipal", required = false) MultipartFile filePrincipal,
+            @RequestParam(value = "fileDetalle2", required = false) MultipartFile fileDetalle2,
+            @RequestParam(value = "fileDetalle3", required = false) MultipartFile fileDetalle3,
+            @RequestParam(value = "fileDetalle4", required = false) MultipartFile fileDetalle4
+    ) {
+        try {
+            // Verificar que el producto existe
+            Optional<Producto> existingProducto = productoService.findById(id);
+            if (existingProducto.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Producto producto = existingProducto.get();
+            producto.setTitle(title);
+            producto.setDescription(description);
+            producto.setCategory(category);
+            producto.setPrice(price);
+
+            Producto updatedProduct = productoService.update(producto, filePrincipal, fileDetalle2, fileDetalle3, fileDetalle4);
+            return ResponseEntity.ok(updatedProduct);
+
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+    }
+
 }

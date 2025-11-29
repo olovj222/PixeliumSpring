@@ -100,4 +100,38 @@ public class NoticiasController {
             return ResponseEntity.notFound().build(); // Devuelve 404
         }
     }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Actualizar noticia", description = "Actualiza una noticia existente por su ID.", security = @SecurityRequirement(name = "Bearer Authentication"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Noticia actualizada exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos o error de archivo"),
+            @ApiResponse(responseCode = "404", description = "Noticia no encontrada")
+    })
+    public ResponseEntity<Noticias> update(
+            @PathVariable int id,
+            @RequestParam("titulo") String titulo,
+            @RequestParam("detalle") String detalle,
+            @RequestParam(value = "file", required = false) MultipartFile file
+    ) {
+        try {
+            // Verificar que la noticia existe
+            Optional<Noticias> existingNoticia = noticiasService.findById(id);
+            if (existingNoticia.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Noticias noticia = existingNoticia.get();
+            noticia.setTitulo(titulo);
+            noticia.setDetalle(detalle);
+
+            Noticias updatedNews = noticiasService.update(noticia, file);
+            return ResponseEntity.ok(updatedNews);
+
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+    }
 }

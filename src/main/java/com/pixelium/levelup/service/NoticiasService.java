@@ -45,6 +45,44 @@ public class NoticiasService {
         return noticiasRepository.save(noticia);
     }
 
+    public Noticias update(Noticias noticia, MultipartFile file) throws IOException {
+        // 1. Si viene un archivo, lo guardamos y reemplazamos el anterior
+        if (file != null && !file.isEmpty()) {
+            // Eliminar la imagen anterior si existe
+            if (noticia.getImagen() != null && !noticia.getImagen().isEmpty()) {
+                deleteFile(noticia.getImagen());
+            }
+
+            // Generamos un nombre único para el nuevo archivo
+            String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+            Path destinationFile = this.rootLocation.resolve(Paths.get(fileName))
+                    .normalize().toAbsolutePath();
+
+            // Aseguramos que la carpeta exista
+            if (!Files.exists(this.rootLocation)) {
+                Files.createDirectories(this.rootLocation);
+            }
+
+            Files.copy(file.getInputStream(), destinationFile, StandardCopyOption.REPLACE_EXISTING);
+            noticia.setImagen(fileName);
+        }
+
+        // 2. Actualizamos en BD
+        return noticiasRepository.save(noticia);
+    }
+
+    // Método helper para eliminar archivos
+    private void deleteFile(String fileName) {
+        try {
+            Path fileToDelete = this.rootLocation.resolve(fileName).normalize().toAbsolutePath();
+            if (Files.exists(fileToDelete) && Files.isRegularFile(fileToDelete)) {
+                Files.delete(fileToDelete);
+            }
+        } catch (IOException e) {
+            System.err.println("Error al eliminar archivo: " + fileName + ". Error: " + e.getMessage());
+        }
+    }
+
     // ... (Mantén tus métodos findAll, findById, deleteById iguales) ...
 
     public List<Noticias> findAll() { return noticiasRepository.findAll(); }

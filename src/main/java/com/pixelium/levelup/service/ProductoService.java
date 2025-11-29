@@ -4,7 +4,7 @@ import com.pixelium.levelup.model.Producto;
 import com.pixelium.levelup.repository.ProductoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartFile; // 🟡 IMPORT FALTANTE
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,8 +22,6 @@ public class ProductoService {
 
     private final Path rootLocation = Paths.get("uploads");
 
-    // ... (Métodos find, delete, save(Producto p) se mantienen) ...
-
     public List<Producto> findAll() {
         return productoRepository.findAll();
     }
@@ -36,10 +34,8 @@ public class ProductoService {
         return productoRepository.save(p);
     }
 
-    // El método save anterior se puede renombrar o mantener, pero si el Controller usa el nuevo,
-    // este es el método que hay que usar si solo se envía un archivo:
+    // Método para guardar con un solo archivo
     public Producto save(Producto producto, MultipartFile file) throws IOException {
-        // Lógica de guardado de un solo archivo (se mantiene)
         if (file != null && !file.isEmpty()) {
             String fileName = storeFile(file);
             producto.setImageSrc(fileName);
@@ -47,7 +43,7 @@ public class ProductoService {
         return productoRepository.save(producto);
     }
 
-    // --- NUEVOS MÉTODOS DE SOPORTE ---
+    // --- MÉTODOS DE SOPORTE ---
 
     // Método helper para guardar un archivo y retornar el nombre único
     private String storeFile(MultipartFile file) throws IOException {
@@ -64,18 +60,26 @@ public class ProductoService {
         return fileName;
     }
 
-    // --- NUEVO MÉTODO PRINCIPAL PARA MÚLTIPLES ARCHIVOS ---
-    public Producto saveWithMultipleFiles(Producto producto, MultipartFile[] files) throws IOException {
+    // 🟡 MÉTODO DELETE FILE FALTANTE
+    private void deleteFile(String fileName) {
+        try {
+            Path fileToDelete = this.rootLocation.resolve(fileName).normalize().toAbsolutePath();
+            if (Files.exists(fileToDelete) && Files.isRegularFile(fileToDelete)) {
+                Files.delete(fileToDelete);
+            }
+        } catch (IOException e) {
+            System.err.println("Error al eliminar archivo: " + fileName + ". Error: " + e.getMessage());
+        }
+    }
 
-        // El array files tiene 4 posiciones: [Principal, Detalle2, Detalle3, Detalle4]
+    // Método para múltiples archivos (si lo necesitas)
+    public Producto saveWithMultipleFiles(Producto producto, MultipartFile[] files) throws IOException {
         for (int i = 0; i < files.length; i++) {
             MultipartFile file = files[i];
 
-            // Verificamos si el archivo existe (solo el principal es obligatorio, el resto pueden ser null)
             if (file != null && !file.isEmpty()) {
-                String fileName = storeFile(file); // Guardamos el archivo
+                String fileName = storeFile(file);
 
-                // Asignamos el nombre de archivo a la propiedad correcta del Producto
                 switch (i) {
                     case 0: // Imagen Principal
                         producto.setImageSrc(fileName);
@@ -93,7 +97,43 @@ public class ProductoService {
             }
         }
 
-        // Guardamos el producto en la BD con todos los nombres de archivo asignados
+        return productoRepository.save(producto);
+    }
+
+    // Método update corregido
+    public Producto update(Producto producto, MultipartFile filePrincipal, MultipartFile fileDetalle2,
+                           MultipartFile fileDetalle3, MultipartFile fileDetalle4) throws IOException {
+
+        // Actualizar imagen principal si se proporciona
+        if (filePrincipal != null && !filePrincipal.isEmpty()) {
+            if (producto.getImageSrc() != null && !producto.getImageSrc().isEmpty()) {
+                deleteFile(producto.getImageSrc());
+            }
+            producto.setImageSrc(storeFile(filePrincipal));
+        }
+
+        // Actualizar imágenes de detalle si se proporcionan
+        if (fileDetalle2 != null && !fileDetalle2.isEmpty()) {
+            if (producto.getImageSrc2() != null && !producto.getImageSrc2().isEmpty()) {
+                deleteFile(producto.getImageSrc2());
+            }
+            producto.setImageSrc2(storeFile(fileDetalle2));
+        }
+
+        if (fileDetalle3 != null && !fileDetalle3.isEmpty()) {
+            if (producto.getImageSrc3() != null && !producto.getImageSrc3().isEmpty()) {
+                deleteFile(producto.getImageSrc3());
+            }
+            producto.setImageSrc3(storeFile(fileDetalle3));
+        }
+
+        if (fileDetalle4 != null && !fileDetalle4.isEmpty()) {
+            if (producto.getImageSrc4() != null && !producto.getImageSrc4().isEmpty()) {
+                deleteFile(producto.getImageSrc4());
+            }
+            producto.setImageSrc4(storeFile(fileDetalle4));
+        }
+
         return productoRepository.save(producto);
     }
 
