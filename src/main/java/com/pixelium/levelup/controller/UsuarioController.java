@@ -99,7 +99,7 @@ public class UsuarioController {
 
     // --- ENDPOINT: ACTUALIZAR PERFIL (PUT) ---
     @PutMapping("/{id}")
-    @Operation(summary = "Actualiza perfil de usuario",description = "Modifica datos de usuario existente")
+    @Operation(summary = "Actualiza perfil de usuario", description = "Modifica datos de usuario existente")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Operación exitosa"),
             @ApiResponse(responseCode = "403", description = "No autorizado o ID no coincide"),
@@ -112,7 +112,8 @@ public class UsuarioController {
             @RequestParam("telefono") String telefono,
             @RequestParam("fechaNacimiento") String fechaNacimiento,
             @RequestParam("comuna") String comuna,
-            @RequestParam(value = "avatar", required = false) MultipartFile avatar
+            @RequestParam(value = "avatar", required = false) MultipartFile avatar,
+            @RequestParam(value = "role", required = false) String role // 🆕 NUEVO PARÁMETRO PARA ROL
     ) {
         try {
             // Lógica de validación de autenticación de Spring Security
@@ -122,8 +123,12 @@ public class UsuarioController {
             Usuario usuarioAuth = usuarioService.findByCorreo(correoAuth)
                     .orElseThrow(() -> new RuntimeException("No existe el usuario autenticado"));
 
-            // Validar que el usuario solo edita su propio ID
-            if (!usuarioAuth.getId().equals(id)) {
+            // 🆕 PERMITIR QUE ADMINS MODIFIQUEN CUALQUIER USUARIO
+            boolean isAdmin = usuarioAuth.getRole().equals("ADMIN");
+            boolean isOwnProfile = usuarioAuth.getId().equals(id);
+
+            // Si NO es admin y NO es su propio perfil, denegar
+            if (!isAdmin && !isOwnProfile) {
                 return ResponseEntity.status(403).body("No puedes editar el perfil de otro usuario");
             }
 
@@ -135,6 +140,11 @@ public class UsuarioController {
             updatedUser.setTelefono(telefono);
             updatedUser.setFechaNacimiento(fechaNacimiento);
             updatedUser.setComuna(comuna);
+
+            // 🆕 SOLO ADMINS PUEDEN CAMBIAR ROLES
+            if (role != null && isAdmin) {
+                updatedUser.setRole(role);
+            }
 
             // Guardar cambios
             Usuario result = usuarioService.updateProfile(updatedUser, avatar);
@@ -158,3 +168,4 @@ public class UsuarioController {
         usuarioService.deleteById(id);
     }
 }
+

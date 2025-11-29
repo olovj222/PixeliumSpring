@@ -81,9 +81,13 @@ public class UsuarioService implements UserDetailsService {
         existingUser.setFechaNacimiento(updatedUser.getFechaNacimiento());
         existingUser.setComuna(updatedUser.getComuna());
 
+        // 🆕 ACTUALIZAR ROL SI SE PROVEE (solo para admins)
+        if (updatedUser.getRole() != null && !updatedUser.getRole().isEmpty()) {
+            existingUser.setRole(updatedUser.getRole());
+        }
+
         // 2. Manejo del Avatar
         if (avatarFile != null && !avatarFile.isEmpty()) {
-
             // Si ya existe un avatar, lo eliminamos primero (limpieza)
             if (existingUser.getAvatarSrc() != null && !existingUser.getAvatarSrc().isEmpty()) {
                 deleteFile(existingUser.getAvatarSrc());
@@ -126,6 +130,7 @@ public class UsuarioService implements UserDetailsService {
             System.err.println("Error al eliminar archivo: " + fileName + ". Error: " + e.getMessage());
         }
     }
+
 
 
     public List<Usuario> findAll() { return usuarioRepository.findAll(); }
