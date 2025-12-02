@@ -2,10 +2,13 @@ package com.pixelium.levelup.config;
 
 import com.pixelium.levelup.model.Noticias;
 import com.pixelium.levelup.model.Producto;
+import com.pixelium.levelup.model.Usuario; // Importar el modelo Usuario
 import com.pixelium.levelup.repository.NoticiasRepository;
 import com.pixelium.levelup.repository.ProductoRepository;
+import com.pixelium.levelup.repository.UsuarioRepository; // Importar el repositorio de Usuario
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder; // Importar PasswordEncoder
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -19,11 +22,57 @@ public class DataLoader implements CommandLineRunner {
     @Autowired
     private ProductoRepository productoRepository;
 
+    // --- NUEVAS DEPENDENCIAS ---
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder; // Inyectar para cifrar contraseñas
+    // ---------------------------
+
     @Override
     public void run(String... args) throws Exception {
+        cargarUsuarios(); // Cargar primero los usuarios
         cargarNoticias();
         cargarProductos();
     }
+
+    // --- NUEVO MÉTODO PARA CARGAR USUARIOS ---
+    private void cargarUsuarios() {
+        if (usuarioRepository.count() == 0) {
+            System.out.println("--- Cargando Usuarios Iniciales ---");
+
+            // 1. USUARIO ADMINISTRADOR
+            Usuario admin = new Usuario();
+            admin.setNombre("Administrador LevelUp");
+            admin.setRut("11111111-1");
+            admin.setTelefono("987654321");
+            admin.setFechaNacimiento("1990-01-01");
+            admin.setCorreo("admin@duoc.cl");
+            // ESENCIAL: Cifrar la contraseña
+            admin.setPassword(passwordEncoder.encode("12345"));
+            admin.setComuna("Santiago");
+            admin.setRole("ADMIN"); // Asignar rol de Administrador
+            admin.setAvatarSrc("admin_avatar.png");
+
+            // 2. USUARIO NORMAL
+            Usuario user = new Usuario();
+            user.setNombre("Usuario Normal");
+            user.setRut("22222222-2");
+            user.setTelefono("912345678");
+            user.setFechaNacimiento("2000-05-15");
+            user.setCorreo("user@duoc.cl");
+            // ESENCIAL: Cifrar la contraseña
+            user.setPassword(passwordEncoder.encode("12345"));
+            user.setComuna("Providencia");
+            user.setRole("USER"); // Asignar rol de Usuario normal
+            user.setAvatarSrc("user_avatar.png");
+
+            usuarioRepository.saveAll(Arrays.asList(admin, user));
+            System.out.println("--- Usuarios 'admin@levelup.cl' (ADMIN) y 'user@levelup.cl' (USER) cargados exitosamente ---");
+        }
+    }
+    // ------------------------------------------
 
     private void cargarNoticias() {
         if (noticiasRepository.count() == 0) {
@@ -52,8 +101,6 @@ public class DataLoader implements CommandLineRunner {
                     "Más allá de las cifras, lo que marcó el evento fue la enorme participación de la comunidad: foros, memes y transmisiones alternativas con streamers de renombre mantuvieron viva la conversación durante todo el fin de semana.");
             n2.setImagen("eSport.webp");
             noticiasRepository.save(n2);
-
-
 
             System.out.println("--- Noticias precargadas exitosamente ---");
         }

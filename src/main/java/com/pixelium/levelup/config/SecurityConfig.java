@@ -43,7 +43,7 @@ public class SecurityConfig {
                         // RUTAS PÚBLICAS Y DE SWAGGER
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/webjars/**", "/doc/**").permitAll()
                         .requestMatchers("/api/v1/usuarios/login", "/api/v1/usuarios/register").permitAll()
-                        .requestMatchers("/images/**", "/avatars/**").permitAll()
+                        .requestMatchers("/images/**", "/avatars/**", "/uploads/**").permitAll()
 
                         // 🟡 PRODUCTOS: Permitir solo GET públicamente
                         .requestMatchers(HttpMethod.GET, "/api/v1/productos/**").permitAll()

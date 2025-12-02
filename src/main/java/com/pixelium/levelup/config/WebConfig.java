@@ -15,8 +15,11 @@ public class WebConfig implements WebMvcConfigurer {
                 .addResourceLocations("file:uploads/");
 
         // 2. Mapea la URL "/avatars/**" a la carpeta física "avatars/" (Fotos de Perfil)
-        // La URL base del frontend para avatares es "http://localhost:8080/avatars/"
         registry.addResourceHandler("/avatars/**")
                 .addResourceLocations("file:avatars/");
+
+        // 3. 🟢 NUEVA RUTA: Mapea la URL "/uploads/**" a la carpeta física "uploads/" (Imágenes de Noticias)
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:uploads/");
     }
 }
