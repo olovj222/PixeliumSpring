@@ -53,7 +53,7 @@ public class DataLoader implements CommandLineRunner {
             admin.setPassword(passwordEncoder.encode("12345"));
             admin.setComuna("Santiago");
             admin.setRole("ADMIN"); // Asignar rol de Administrador
-            admin.setAvatarSrc("admin_avatar.png");
+            admin.setAvatarSrc("admin_avatar.jpg");
 
             // 2. USUARIO NORMAL
             Usuario user = new Usuario();
@@ -66,7 +66,7 @@ public class DataLoader implements CommandLineRunner {
             user.setPassword(passwordEncoder.encode("12345"));
             user.setComuna("Providencia");
             user.setRole("USER"); // Asignar rol de Usuario normal
-            user.setAvatarSrc("user_avatar.png");
+            user.setAvatarSrc("user_avatar.jpg");
 
             usuarioRepository.saveAll(Arrays.asList(admin, user));
             System.out.println("--- Usuarios 'admin@levelup.cl' (ADMIN) y 'user@levelup.cl' (USER) cargados exitosamente ---");
